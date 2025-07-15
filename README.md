@@ -1,66 +1,40 @@
 # DataLinks
-type PgxConnect struct {
-Pool *pgxpool.Pool
-}
-
-func CreatePgxUrl(url PostgresUrl) string{
-return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-url.Username,
-url.Pass,
-url.Hostname,
-url.Port,
-url.DBName)
-}
-
 func CreatePool(connurl string, try int, logger *slog.Logger) (*pgxpool.Pool, error) {
-ctx, cancel := WithTimeout(3)
-defer cancel()
-var pool *pgxpool.Pool
-var err error
-poolcreate := make(chan struct{})
-poolerr := make(chan error)
-for i := 0; i < try; i++ {
 
+
+	var err error
+	for i := 0; i < try; i++ {
+		ctx, cancel := WithTimeout(3)
+		defer cancel()
 		logger.Info("Connect pgx try num - ", try)
-		go func() {
-			p, err := pgxpool.New(ctx, connurl)
-			if p == nil {
-				pool = p
-				poolcreate <- struct{}{}
-			}
-			if err != nil {
-				poolerr <- err
-				return
-			}
-		}()
-		if i == try-1 {
-			close(poolcreate)
-			close(poolerr)
-		}
-		select {
-		case <-ctx.Done():
-			logger.Warn("connect time exceeded")
-			continue
-		case err := <-poolerr:
+		pool, e := pgxpool.New(ctx, connurl)
+		if e != nil {
+			err = e
 			logger.Warn("Connect failed", slog.String("error", err.Error()))
 			continue
-		case <-poolcreate:
-			close(poolcreate)
-			close(poolerr)
-			err = pool.Ping(ctx)
-			if err != nil {
+		}else{
+			e = pool.Ping(ctx)
+			
+			if e != nil{
 				pool.Close()
-				logger.Warn("failed ping pool ", err)
+				logger.Warn("failed ping pool connect ", err)
+				err = e
 				continue
 			}
-			return pool, nil
+			
+				return pool,  nil
+			}
 		}
-	}
-	if errors.Is(err, context.DeadlineExceeded) {
+		
+	var pgErr *pgconn.PgError
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
 		return nil, fmt.Errorf("no one of %d attempts couldn connect in the specified time", try)
-	}
-	if PgErr, ok := err.(*pgconn.PgError); ok {
-		return nil, fmt.Errorf("pgx error: %s, %s", PgErr.Code, PgErr.Message)
-	}
+	case errors.As(err, &pgErr):
+		return nil, fmt.Errorf("pgx error: %s, %s", pgErr.Code, pgErr.Message)
+	default:
 		return nil, fmt.Errorf("0 info about connection error")
+
+	}
+
 }
