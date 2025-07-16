@@ -1,7 +1,7 @@
 package parser
 
 import (
-	db "DataLinks/internal/storages/postgreSQL"
+	db "DataLinks/internal/storages/postgreSQL/TakeConnect"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"os"

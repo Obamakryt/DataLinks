@@ -27,4 +27,5 @@ func SetupLogger(levelog int) *slog.Logger {
 		logger = slog.Default()
 	}
 	return logger
+
 }

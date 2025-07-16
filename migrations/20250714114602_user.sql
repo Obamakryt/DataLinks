@@ -4,7 +4,7 @@ CREATE TABLE users(
     id SERIAL PRIMARY KEY,
     name varchar(30) not null,
     password TEXT not null,
-    email TEXT not null,
+    email TEXT unique not null,
     create_at timestamp(0) DEFAULT now()
 );
 -- +goose StatementEnd
