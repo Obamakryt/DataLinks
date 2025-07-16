@@ -9,7 +9,7 @@ import (
 
 type Reg struct {
 	logger *slog.Logger
-	ctx    context.Context
+	ctx    *context.Context
 	pool   TakeConnect.PgxConnect
 	req    *auth.StorageRegister
 }
@@ -17,10 +17,10 @@ type Reg struct {
 func Registration(r *Reg) error {
 	q := `INSERT INTO users(name, email, password)  VALUES($1, $2, $3) ON CONFLICT (email) DO NOTHING`
 
-	rec, err := r.pool.Pool.Exec(r.ctx, q, r.req.Name, r.req.Email, r.req.HashPass)
+	rec, err := r.pool.Pool.Exec(*r.ctx, q, r.req.Name, r.req.Email, r.req.HashPass)
 
 	if err != nil {
-		retrurnErr := LoggerRegistration(rec, err, r.logger, r.req)
+		retrurnErr := LoggerRegistration(rec, err, r.logger)
 		return retrurnErr
 	}
 	r.logger.Info("User registered",

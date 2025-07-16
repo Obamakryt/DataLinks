@@ -5,6 +5,11 @@ type RequestRegister struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+type RequestLogIn struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type StorageRegister struct {
 	Name     string
 	Email    string

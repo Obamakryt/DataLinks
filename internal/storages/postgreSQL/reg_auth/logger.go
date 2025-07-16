@@ -1,18 +1,20 @@
 package auth
 
 import (
-	"DataLinks/internal/servise/auth"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"log/slog"
 )
 
-func LoggerRegistration(rec pgconn.CommandTag, err error, logger *slog.Logger, req *auth.StorageRegister) error {
+const someerr = "some unknown error"
+
+func LoggerRegistration(rec pgconn.CommandTag, err error, logger *slog.Logger) error {
 	if errors.Is(err, context.DeadlineExceeded) {
 		logger.Info("DB Timeout", slog.String("error", err.Error()))
-		fmt.Errorf("failed to connect please try again later")
+		return fmt.Errorf("failed to connect please try again later")
 	}
 	if rec.RowsAffected() == 0 {
 		logger.Info("Already exist", slog.String("error", err.Error()))
@@ -23,6 +25,17 @@ func LoggerRegistration(rec pgconn.CommandTag, err error, logger *slog.Logger, r
 		logger.Info("Failed PGX ", PgErr.Message)
 		return fmt.Errorf("failed please try again later")
 	}
-	return fmt.Errorf("some unknown error")
+	return fmt.Errorf(someerr)
+}
 
+func LoggerAuthorization(err error, logger *slog.Logger) error {
+	if errors.Is(err, context.DeadlineExceeded) {
+		logger.Info("DB Timeout", slog.String("error", err.Error()))
+		fmt.Errorf("failed to connect please try again later")
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		logger.Info("Find Error", slog.String("User", "Not Find"))
+		return fmt.Errorf("use with such email not exist")
+	}
+	return fmt.Errorf(someerr)
 }
