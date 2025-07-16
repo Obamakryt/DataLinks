@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"DataLinks/internal/auth"
+	"DataLinks/internal/servise/auth"
 	"DataLinks/internal/storages/postgreSQL/TakeConnect"
 	"context"
 	"log/slog"
