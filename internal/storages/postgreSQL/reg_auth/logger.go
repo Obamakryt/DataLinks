@@ -31,7 +31,7 @@ func LoggerRegistration(rec pgconn.CommandTag, err error, logger *slog.Logger) e
 func LoggerAuthorization(err error, logger *slog.Logger) error {
 	if errors.Is(err, context.DeadlineExceeded) {
 		logger.Info("DB Timeout", slog.String("error", err.Error()))
-		fmt.Errorf("failed to connect please try again later")
+		return fmt.Errorf("failed to connect please try again later")
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
 		logger.Info("Find Error", slog.String("User", "Not Find"))

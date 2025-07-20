@@ -1,11 +1,5 @@
 package auth
 
-import (
-	"DataLinks/internal/storages/postgreSQL/TakeConnect"
-	"log/slog"
-)
-
-type AuthService interface {
-	Register(pool *TakeConnect.PgxConnect, logger *slog.Logger) error
-	Login()
-}
+//type DBRegistration interface {
+//	Registration(r *auth.RegistrationDB, ctx context.Context) error
+//}

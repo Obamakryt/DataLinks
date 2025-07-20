@@ -1,29 +1,40 @@
 package auth
 
 import (
-	"DataLinks/internal/servise/auth"
+	"DataLinks/internal/api/rest"
 	"DataLinks/internal/storages/postgreSQL/TakeConnect"
 	"context"
 	"log/slog"
 )
 
-type Reg struct {
-	logger *slog.Logger
-	ctx    *context.Context
-	pool   TakeConnect.PgxConnect
-	req    *auth.StorageRegister
+type StorageRegister struct {
+	Name     string
+	Email    string
+	HashPass string
 }
 
-func Registration(r *Reg) error {
+type RegistrationDB struct {
+	logger *slog.Logger
+	pool   TakeConnect.PgxConnect
+}
+
+func NewStorageRegister(pass string, lastData rest.RequestRegister) *StorageRegister {
+	return &StorageRegister{HashPass: pass, Name: lastData.Name, Email: lastData.Email}
+}
+func NewRegistratDB(pool TakeConnect.PgxConnect, log *slog.Logger) *RegistrationDB {
+	return &RegistrationDB{logger: log, pool: pool}
+}
+
+func (s *StorageRegister) Registration(r *RegistrationDB, ctx context.Context) error {
 	q := `INSERT INTO users(name, email, password)  VALUES($1, $2, $3) ON CONFLICT (email) DO NOTHING`
 
-	rec, err := r.pool.Pool.Exec(*r.ctx, q, r.req.Name, r.req.Email, r.req.HashPass)
+	rec, err := r.pool.Pool.Exec(ctx, q, s.Name, s.Email, s.HashPass)
 
 	if err != nil {
-		retrurnErr := LoggerRegistration(rec, err, r.logger)
-		return retrurnErr
+		returnErr := LoggerRegistration(rec, err, r.logger)
+		return returnErr
 	}
 	r.logger.Info("User registered",
-		slog.String("name", r.req.Name), slog.String("email", r.req.Email))
+		slog.String("name", s.Name), slog.String("email", s.Email))
 	return nil
 }

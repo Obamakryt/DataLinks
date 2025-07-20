@@ -16,7 +16,3 @@ type ParseStruct struct {
 func NewParseStruct(yml string, env string) *ParseStruct {
 	return &ParseStruct{PostgresUrl{}, yml, env}
 }
-
-func NewPostgresUrl() *PostgresUrl {
-	return &PostgresUrl{}
-}

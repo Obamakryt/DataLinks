@@ -23,7 +23,7 @@ func CreatePgxUrl(url PostgresUrl) string {
 		url.DBName)
 }
 
-func CreatePool(connurl string, try int, logger *slog.Logger) (*pgxpool.Pool, error) {
+func NewPool(connurl string, try int, logger *slog.Logger) (*pgxpool.Pool, error) {
 	var err error
 	for i := 0; i < try; i++ {
 		ctx, cancel := context_helper.WithTimeout(3)
