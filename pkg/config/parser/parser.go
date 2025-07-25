@@ -17,3 +17,9 @@ func ParseDBcfg(parseStruct *db.ParseStruct) (error, *db.PostgresUrl) {
 	}
 	return nil, &parseStruct.PostgresUrl
 }
+
+type ServerSettings struct {
+	port string `yaml:"port"`
+}
+
+func ParserServerSet(yml string)

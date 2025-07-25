@@ -7,26 +7,28 @@ import (
 	"log/slog"
 )
 
-type ScanQR struct {
-	Name     string
+type DataFromDB struct {
 	Password string
 	Id       string
 }
-type Auth struct {
+type PostgresPool struct {
 	pool   TakeConnect.PgxConnect
-	req    rest.RequestLogIn
 	logger *slog.Logger
 }
 
-func Authorization(a *Auth, ctx context.Context) (ScanQR, error) {
-	q := `SELECT name, password, id FROM users WHERE email=$1`
-	scanqr := ScanQR{}
-	err := a.pool.Pool.QueryRow(ctx, q, a.req.Email).Scan(&scanqr)
+func NewPostgresPool(pool TakeConnect.PgxConnect, log *slog.Logger) *PostgresPool {
+	return &PostgresPool{logger: log, pool: pool}
+}
+
+func (p *PostgresPool) Authorization(req rest.RequestLogIn, ctx context.Context) (DataFromDB, error) {
+	q := `SELECT password, id FROM users WHERE email=$1`
+	scanqr := DataFromDB{}
+	err := p.pool.Pool.QueryRow(ctx, q, req.Email).Scan(&scanqr)
 
 	if err != nil {
-		retrurnErr := LoggerAuthorization(err, a.logger)
+		retrurnErr := LoggerAuthorization(err, p.logger)
 		return scanqr, retrurnErr
 	}
-	a.logger.Info("Use is find", slog.String("email", a.req.Email))
+	p.logger.Info("Use is find", slog.String("email", req.Email))
 	return scanqr, nil
 }

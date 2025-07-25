@@ -19,7 +19,7 @@ func (j *JWTSigh) CreateSigh() error {
 	return nil
 }
 
-func (j *JWTSigh) GenerateJWT(id string, tl time.Duration) (string, error) {
+func (j *JWTSigh) generateJWT(id string, tl time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Subject:   id,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tl)),
@@ -28,7 +28,7 @@ func (j *JWTSigh) GenerateJWT(id string, tl time.Duration) (string, error) {
 	return token.SignedString([]byte(j.secret))
 }
 
-func (j *JWTSigh) ParseJWT(reqToken string) (string, error) {
+func (j *JWTSigh) parseJWT(reqToken string) (string, error) {
 	token, err := jwt.Parse(reqToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected sigh method")

@@ -3,3 +3,8 @@ Postgres:
   hostname: localhost
   port: 5432
   dbname: datalinks
+
+
+Server:
+  port: ":8080"
+  readtimeout:
