@@ -1,4 +1,4 @@
-package auth
+package reg_auth
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func LoggerRegistration(rec pgconn.CommandTag, err error, logger *slog.Logger) e
 	}
 	var PgErr *pgconn.PgError
 	if errors.As(err, &PgErr) {
-		logger.Info("Failed PGX ", PgErr.Message)
+		logger.Info("Failed PGX", PgErr.Message)
 		return fmt.Errorf("failed please try again later")
 	}
 	return fmt.Errorf(someerr)

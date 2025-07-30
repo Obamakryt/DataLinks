@@ -1,7 +1,7 @@
-package auth
+package reg_auth
 
 import (
-	"DataLinks/internal/api/rest"
+	"DataLinks/internal/dto/request"
 	"context"
 	"log/slog"
 )
@@ -12,7 +12,7 @@ type StorageRegister struct {
 	HashPass string
 }
 
-func NewStorageRegister(pass string, lastData rest.RequestRegister) *StorageRegister {
+func NewStorageRegister(pass string, lastData request.Register) *StorageRegister {
 	return &StorageRegister{HashPass: pass, Name: lastData.Name, Email: lastData.Email}
 }
 

@@ -1,33 +1,46 @@
-package auth
+package reg_auth
 
 import (
-	"DataLinks/internal/api/rest"
-	"DataLinks/internal/storages/postgreSQL/TakeConnect"
+	"DataLinks/internal/dto/request"
+	"DataLinks/internal/storages/postgreSQL/connect_pool"
 	"context"
 	"log/slog"
 )
 
-type DataFromDB struct {
+type StorageAuth struct {
 	Password string
 	Id       string
 }
 type PostgresPool struct {
-	pool   TakeConnect.PgxConnect
+	pool   connect_pool.PgxConnect
 	logger *slog.Logger
 }
 
-func NewPostgresPool(pool TakeConnect.PgxConnect, log *slog.Logger) *PostgresPool {
+func NewPostgresPool(pool connect_pool.PgxConnect, log *slog.Logger) *PostgresPool {
 	return &PostgresPool{logger: log, pool: pool}
 }
 
-func (p *PostgresPool) Authorization(req rest.RequestLogIn, ctx context.Context) (DataFromDB, error) {
+type GlobalStorage struct {
+	Storage DBStorage
+}
+
+func NewStorage(storage DBStorage) GlobalStorage {
+	return GlobalStorage{Storage: storage}
+}
+
+type DBStorage interface {
+	Authorization(req request.LogIn, ctx context.Context) (StorageAuth, error)
+	Registration(r *StorageRegister, ctx context.Context) error
+}
+
+func (p *PostgresPool) Authorization(req request.LogIn, ctx context.Context) (StorageAuth, error) {
 	q := `SELECT password, id FROM users WHERE email=$1`
-	scanqr := DataFromDB{}
+	scanqr := StorageAuth{}
 	err := p.pool.Pool.QueryRow(ctx, q, req.Email).Scan(&scanqr)
 
 	if err != nil {
-		retrurnErr := LoggerAuthorization(err, p.logger)
-		return scanqr, retrurnErr
+		ReturnErr := LoggerAuthorization(err, p.logger)
+		return scanqr, ReturnErr
 	}
 	p.logger.Info("Use is find", slog.String("email", req.Email))
 	return scanqr, nil

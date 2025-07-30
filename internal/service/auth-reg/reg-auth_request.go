@@ -1,32 +1,24 @@
-package auth
+package auth_reg
 
 import (
-	"DataLinks/internal/api/rest"
+	"DataLinks/internal/dto/request"
 	auth "DataLinks/internal/storages/postgreSQL/reg_auth"
 	"context"
 	"fmt"
 	"log/slog"
 )
 
-type RegLogic struct {
-	DataWithoutHash rest.RequestRegister
+type LogicReg struct {
+	DataWithoutHash request.Register
 	Logger          *slog.Logger
 }
 type AuthLogic struct {
-	Data   rest.RequestLogIn
+	Data   request.LogIn
 	Logger *slog.Logger
 	JWTSigh
 }
 
-type Storage struct {
-	Storage *auth.PostgresPool
-}
-
-func NewStorage(storage *auth.PostgresPool) *Storage {
-	return &Storage{Storage: storage}
-}
-
-func (r *RegLogic) NewUser(ctx context.Context, storage Storage) error {
+func (r *LogicReg) NewUser(ctx context.Context, storage auth.globalStorage) error {
 	hashpass := HashingPass(r.DataWithoutHash.Password)
 	reg := auth.NewStorageRegister(hashpass, r.DataWithoutHash)
 	err := storage.Storage.Registration(reg, ctx)
@@ -37,7 +29,7 @@ func (r *RegLogic) NewUser(ctx context.Context, storage Storage) error {
 	return nil
 }
 
-func (a *AuthLogic) NewAuth(ctx context.Context, storage Storage) (string, error) {
+func (a *AuthLogic) NewAuth(ctx context.Context, storage auth.globalStorage) (string, error) {
 	DataUser, err := storage.Storage.Authorization(a.Data, ctx)
 	if err != nil {
 		a.Logger.Warn("Failed find user", slog.String("Error", err.Error()))

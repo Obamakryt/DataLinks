@@ -1,13 +1,13 @@
-package TakeConnect
+package connect_pool
 
 import (
-	"DataLinks/pkg/context_helper"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
+	"time"
 )
 
 type PgxConnect struct {
@@ -26,7 +26,7 @@ func CreatePgxUrl(url PostgresUrl) string {
 func NewPool(connurl string, try int, logger *slog.Logger) (*pgxpool.Pool, error) {
 	var err error
 	for i := 0; i < try; i++ {
-		ctx, cancel := context_helper.WithTimeout(3)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		logger.Info("Connect pgx try num - ", try)
 		pool, e := pgxpool.New(ctx, connurl)
 		cancel()
@@ -35,8 +35,7 @@ func NewPool(connurl string, try int, logger *slog.Logger) (*pgxpool.Pool, error
 			logger.Warn("Connect failed", slog.String("error", err.Error()))
 			continue
 		} else {
-			ctx, cancel = context_helper.WithTimeout(3)
-
+			ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
 			e = pool.Ping(ctx)
 			cancel()
 			if e != nil {

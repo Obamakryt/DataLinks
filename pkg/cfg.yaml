@@ -7,4 +7,4 @@ Postgres:
 
 Server:
   port: ":8080"
-  readtimeout:
+readtimeout:

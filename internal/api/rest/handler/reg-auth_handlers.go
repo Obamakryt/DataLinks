@@ -1,26 +1,26 @@
 package handler
 
 import (
-	"DataLinks/internal/api/rest"
-	"DataLinks/internal/service/auth"
+	"DataLinks/internal/dto/request"
+	"DataLinks/internal/service/auth-reg"
+	auth "DataLinks/internal/storages/postgreSQL/reg_auth"
 	"github.com/go-playground/validator/v10"
-	"log/slog"
-
 	"github.com/labstack/echo/v4"
+	"log/slog"
 )
 
 type Handler struct {
 	Validator *validator.Validate
 	logger    *slog.Logger
-	Storage   auth.Storage
+	Storage   auth.GlobalStorage
 }
 
-func NewHandler(validator *validator.Validate, logger *slog.Logger, storage auth.Storage) *Handler {
+func NewHandler(validator *validator.Validate, logger *slog.Logger, storage auth.GlobalStorage) *Handler {
 	return &Handler{Validator: validator, logger: logger, Storage: storage}
 }
 
 func (h *Handler) RegHandler(e echo.Context) error {
-	JsonStruct := rest.RequestRegister{}
+	JsonStruct := request.Register{}
 
 	err := e.Bind(&JsonStruct)
 	if err != nil {
@@ -33,7 +33,7 @@ func (h *Handler) RegHandler(e echo.Context) error {
 		LoggerValidatorError(h.logger, DataErr)
 		return Failed(e, BadCode, "invalid data")
 	}
-	RegService := auth.RegLogic{DataWithoutHash: JsonStruct, Logger: h.logger}
+	RegService := auth_reg.LogicReg{DataWithoutHash: JsonStruct, Logger: h.logger}
 
 	err = RegService.NewUser(e.Request().Context(), h.Storage)
 	if err != nil {
@@ -43,7 +43,7 @@ func (h *Handler) RegHandler(e echo.Context) error {
 }
 
 func (h *Handler) LogHandler(e echo.Context) error {
-	JsonStruct := rest.RequestLogIn{}
+	JsonStruct := request.LogIn{}
 
 	err := e.Bind(&JsonStruct)
 	if err != nil {
@@ -56,12 +56,12 @@ func (h *Handler) LogHandler(e echo.Context) error {
 		LoggerValidatorError(h.logger, DataErr)
 		return Failed(e, BadCode, "invalid data")
 	}
-	jwtsight := auth.JWTSigh{}
+	jwtsight := auth_reg.JWTSigh{}
 	err = jwtsight.CreateSigh()
 	if err != nil {
 		return Failed(e, BadCode, "something go wrong")
 	}
-	LogService := auth.AuthLogic{Data: JsonStruct, Logger: h.logger, JWTSigh: jwtsight}
+	LogService := auth_reg.AuthLogic{Data: JsonStruct, Logger: h.logger, JWTSigh: jwtsight}
 
 	token, err := LogService.NewAuth(e.Request().Context(), h.Storage)
 	if err != nil {

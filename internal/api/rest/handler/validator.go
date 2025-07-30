@@ -4,6 +4,9 @@ import (
 	"errors"
 	"github.com/go-playground/validator/v10"
 	"log/slog"
+	"net/http"
+	"strings"
+	"time"
 	"unicode"
 )
 
@@ -53,5 +56,38 @@ func PasswordValidator(v *validator.Validate) {
 			}
 		}
 		return false
+	})
+}
+
+// TODO: переделать эту залупу хэд запросы не работают
+func UrlValidator(v *validator.Validate) {
+	_ = v.RegisterValidation("url", func(f validator.FieldLevel) bool {
+		var url string
+		value := f.Field().String()
+		if len([]rune(value)) < 3 {
+			return false
+		}
+		if !strings.HasPrefix(value, "https://") {
+			url = "https://" + value
+		}
+
+		client := http.Client{Timeout: 2 * time.Second}
+		resp, err := client.Head(url)
+		if err != nil || resp.StatusCode >= 400 {
+			return false
+		}
+		defer resp.Body.Close()
+
+		return true
+	})
+}
+
+func HTTPValidator(v *validator.Validate) {
+	_ = v.RegisterValidation("http", func(f validator.FieldLevel) bool {
+		value := f.Field().String()
+		if strings.HasPrefix(value, "http://") {
+			return false
+		}
+		return true
 	})
 }

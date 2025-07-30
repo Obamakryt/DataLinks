@@ -1,4 +1,4 @@
-package auth
+package auth_reg
 
 import (
 	"fmt"
