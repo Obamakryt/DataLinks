@@ -1,21 +1,25 @@
 package parser
 
 import (
-	db "DataLinks/internal/storages/postgreSQL/connect_pool"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
+	"time"
 )
 
 type ServerSettings struct {
-	Addr         string `yaml:"port"`
-	ReadTimeout  string `yaml:"read_timeout"`
-	WriteTimeout string `yaml:"write_timeout"`
-	IdleTimeout  string `yaml:"idle_timeout"`
-	YamlPath     string
+	Addr         string        `yaml:"port"`
+	ReadTimeout  time.Duration `yaml:"read_timeout"`
+	WriteTimeout time.Duration `yaml:"write_timeout"`
+	IdleTimeout  time.Duration `yaml:"idle_timeout"`
+	yamlPath     string
+}
+
+func NewServerSettings(yamlPath string) *ServerSettings {
+	return &ServerSettings{yamlPath: yamlPath}
 }
 
 func (s *ServerSettings) ParserServerSet() error {
-	err := cleanenv.ReadConfig(s.YamlPath, s)
+	err := cleanenv.ReadConfig(s.yamlPath, s)
 	if err != nil {
 		return fmt.Errorf("couldnt read yml cfg %w", err)
 	}

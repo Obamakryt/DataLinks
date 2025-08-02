@@ -10,6 +10,10 @@ type LogIn struct {
 	Password string `json:"password" validator:"required,min=8,max=24,password"`
 }
 
-type Create struct {
+type Add struct {
 	Url string `json:"url" validator:"required,url"`
+}
+type Change struct {
+	Add
+	NewUrl string `json:"new_url" validator:"required,url"`
 }
