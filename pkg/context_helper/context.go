@@ -17,3 +17,11 @@ func WithTimeout(timeout time.Duration) echo.MiddlewareFunc {
 		}
 	}
 }
+
+func ContextHaveUserID(ctx context.Context) (int, bool) {
+	userID, ok := ctx.Value("user_id").(int)
+	if !ok {
+		return -1, false
+	}
+	return userID, true
+}

@@ -1,4 +1,4 @@
-package auth
+package jwt_hash
 
 import "golang.org/x/crypto/bcrypt"
 

@@ -1,25 +1,27 @@
 package parser
 
 import (
-	db "DataLinks/internal/storages/postgreSQL/TakeConnect"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
+	"time"
 )
 
-func ParseDBcfg(parseStruct *db.ParseStruct) (error, *db.PostgresUrl) {
-	err := cleanenv.ReadConfig(parseStruct.YamlCfg, &parseStruct.PostgresUrl)
-	if err != nil {
-		return fmt.Errorf("couldnt read yml cfg %w", err), &db.PostgresUrl{}
-	}
-	err = cleanenv.ReadEnv(&parseStruct.PostgresUrl)
-	if err != nil {
-		return fmt.Errorf("couldnt find postgres password in env %w", err), &db.PostgresUrl{}
-	}
-	return nil, &parseStruct.PostgresUrl
-}
-
 type ServerSettings struct {
-	port string `yaml:"port"`
+	Addr         string        `yaml:"port"`
+	ReadTimeout  time.Duration `yaml:"read_timeout"`
+	WriteTimeout time.Duration `yaml:"write_timeout"`
+	IdleTimeout  time.Duration `yaml:"idle_timeout"`
+	yamlPath     string
 }
 
-func ParserServerSet(yml string)
+func NewServerSettings(yamlPath string) *ServerSettings {
+	return &ServerSettings{yamlPath: yamlPath}
+}
+
+func (s *ServerSettings) ParserServerSet() error {
+	err := cleanenv.ReadConfig(s.yamlPath, s)
+	if err != nil {
+		return fmt.Errorf("couldnt read yml cfg %w", err)
+	}
+	return nil
+}

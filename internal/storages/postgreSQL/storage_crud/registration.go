@@ -1,28 +1,24 @@
-package auth
+package storage_crud
 
 import (
-	"DataLinks/internal/api/rest"
+	"DataLinks/internal/dto/request"
+	"DataLinks/internal/slogger"
 	"context"
 	"log/slog"
 )
 
-type StorageRegister struct {
-	Name     string
-	Email    string
-	HashPass string
-}
-
-func NewStorageRegister(pass string, lastData rest.RequestRegister) *StorageRegister {
+func NewStorageRegister(pass string, lastData request.Register) *StorageRegister {
 	return &StorageRegister{HashPass: pass, Name: lastData.Name, Email: lastData.Email}
 }
+
+// TODO FK THIS SHIT REMAKE HATE THIS REALIZATION
 
 func (p *PostgresPool) Registration(r *StorageRegister, ctx context.Context) error {
 	q := `INSERT INTO users(name, email, password)  VALUES($1, $2, $3) ON CONFLICT (email) DO NOTHING`
 
-	rec, err := p.pool.Pool.Exec(ctx, q, r.Name, r.Email, r.HashPass)
-
+	commandTag, err := p.Client.Pool.Exec(ctx, q, r.Name, r.Email, r.HashPass)
 	if err != nil {
-		returnErr := LoggerRegistration(rec, err, p.logger)
+		returnErr := slogger.LoggerExecInsert(true, err, p.logger, slogger.InsertNewUser)
 		return returnErr
 	}
 	p.logger.Info("User registered",
