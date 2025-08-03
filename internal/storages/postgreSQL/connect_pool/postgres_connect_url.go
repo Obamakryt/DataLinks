@@ -23,7 +23,7 @@ type DbParseStruct struct {
 	EnvNamePass string
 }
 
-func (p *DbParseStruct) ParseDBcfg() error {
+func (p *DbParseStruct) Parsecfg() error {
 	err := cleanenv.ReadConfig(p.YamlCfg, p.PostgresUrl)
 	if err != nil {
 		return fmt.Errorf("couldnt read yml cfg %w", err)
