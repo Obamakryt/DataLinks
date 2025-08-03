@@ -9,12 +9,12 @@ import (
 )
 
 type PostgresPool struct {
-	Client connect_pool.PgxConnect
+	client connect_pool.PgxConnect
 	logger *slog.Logger
 }
 
 func NewPostgresPool(pool connect_pool.PgxConnect, log *slog.Logger) *PostgresPool {
-	return &PostgresPool{logger: log, Client: pool}
+	return &PostgresPool{logger: log, client: pool}
 }
 
 type AuthReg struct {
@@ -32,14 +32,17 @@ type UserLinks struct {
 type UpdateLink struct {
 	Storage DBUpdateLink
 }
+type DeleteLink struct {
+	Storage DBDeleteLink
+}
 
 type DBAuthReg interface {
 	Authorization(req request.LogIn, ctx context.Context) (StorageAuth, error)
 	Registration(r *StorageRegister, ctx context.Context) error
 }
 type DBNewLinks interface {
-	InsertOrFindUrl(ctx context.Context, url string) (int, error)
-	InsertNewLink(ctx context.Context, idUser int, idLink int) (bool, error)
+	InsertOrFindUrl(ctx context.Context, tx pgx.Tx, url string) (int, error)
+	InsertNewUserLink(ctx context.Context, tx pgx.Tx, idUser int, idLink int) error
 }
 
 type NewLinkTransaction interface {
@@ -51,11 +54,14 @@ type DBUserLinks interface {
 }
 
 type DBUpdateLink interface {
-	ChangeLink(ctx context.Context, url string) (int, error)
-	FindOldLink(ctx context.Context, url string) (int, error)
+	InsertNewLink(ctx context.Context, url string) (int, error)
+	FindLink(ctx context.Context, url string) (int, error)
 	UpdateUserLink(ctx context.Context, data DataUpdateUserLink) error
 }
-
+type DBDeleteLink interface {
+	FindLink(ctx context.Context, url string) (int, error)
+	DeleteLink(ctx context.Context, urlID int, userid int) error
+}
 type DataUpdateUserLink struct {
 	IdUser    int
 	IdLink    int

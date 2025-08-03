@@ -17,3 +17,6 @@ type Change struct {
 	Add
 	NewUrl string `json:"new_url" validator:"required,url"`
 }
+type Delete struct {
+	Add
+}

@@ -20,7 +20,7 @@ type LogicLinkAdd struct {
 }
 
 func (l *LogicLinkAdd) NewLink(ctx context.Context, storage storage_crud.NewLinks) error {
-	userID, ok := context_helper.ContextHaveUserID(ctx)
+	userID, ok := context_helper.ContextGetUserID(ctx)
 	if !ok {
 		return errors.New("user id is required")
 	}
@@ -47,15 +47,15 @@ func (l *LogicLinkAdd) NewLink(ctx context.Context, storage storage_crud.NewLink
 		}
 	}()
 
-	idLink, err := storage.Storage.InsertOrFindUrl(ctx, l.Data.Url)
+	idLink, err := storage.Storage.InsertOrFindUrl(ctx, tx, l.Data.Url)
 	if err != nil {
 		err = slogger.LoggerQueryRow(err, l.Logger, "")
 		return err
 	}
 
-	insert, err := storage.Storage.InsertNewLink(ctx, userID, idLink)
+	err = storage.Storage.InsertNewUserLink(ctx, tx, userID, idLink)
 	if err != nil {
-		err = slogger.LoggerExecInsert(insert, err, l.Logger, "CreateNewLinksUser")
+		err = slogger.LoggerExecInsert(err, l.Logger, "CreateNewLinksUser")
 		return err
 	}
 	err = tx.Commit(ctx)
@@ -67,7 +67,7 @@ func (l *LogicLinkAdd) NewLink(ctx context.Context, storage storage_crud.NewLink
 }
 
 func TakeChart(ctx context.Context, storage storage_crud.UserLinks, logger *slog.Logger) ([]string, error) {
-	userID, ok := context_helper.ContextHaveUserID(ctx)
+	userID, ok := context_helper.ContextGetUserID(ctx)
 	if !ok {
 		return nil, errors.New("user id is required")
 	}
@@ -92,14 +92,14 @@ type LogicUpdateLink struct {
 }
 
 func (l *LogicUpdateLink) ChangeCurrentLink(ctx context.Context, storage storage_crud.DBUpdateLink) error {
-	userID, ok := context_helper.ContextHaveUserID(ctx)
+	userID, ok := context_helper.ContextGetUserID(ctx)
 	if !ok {
 		return errors.New("user id is required")
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	var newID, oldID int
 	g.Go(func() error {
-		oldid, err := storage.FindOldLink(ctx, l.Data.Url)
+		oldid, err := storage.FindLink(ctx, l.Data.Url)
 		if err != nil {
 			err = slogger.LoggerQueryRow(err, l.Logger, "FindOldLink")
 			return err
@@ -108,7 +108,7 @@ func (l *LogicUpdateLink) ChangeCurrentLink(ctx context.Context, storage storage
 		return nil
 	})
 	g.Go(func() error {
-		newid, err := storage.ChangeLink(ctx, l.Data.NewUrl)
+		newid, err := storage.InsertNewLink(ctx, l.Data.NewUrl)
 		if err != nil {
 			err = slogger.LoggerQueryRow(err, l.Logger, "ReplacementOldLink")
 			return err
@@ -124,7 +124,23 @@ func (l *LogicUpdateLink) ChangeCurrentLink(ctx context.Context, storage storage
 
 	err := storage.UpdateUserLink(ctx, data)
 	if err != nil {
-		err = slogger.LoggerExecInsert(false, err, l.Logger, "ChangeLinksUser")
+		return slogger.LoggerExecInsert(err, l.Logger, "ChangeLinksUser")
 	}
 	return nil
+}
+
+type LogicDeleteLink struct {
+	Data   request.Delete
+	Logger *slog.Logger
+}
+
+func (l *LogicDeleteLink) DeleteLink(ctx context.Context, storage storage_crud.DeleteLink) error {
+	userID, ok := context_helper.ContextGetUserID(ctx)
+	if !ok {
+		return errors.New("user id is required")
+	}
+	urlID, err := storage.Storage.FindLink(ctx, l.Data.Url)
+	if err != nil {
+
+	}
 }
