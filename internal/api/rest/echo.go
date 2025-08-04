@@ -17,9 +17,9 @@ func Router(dataServer parser.ServerSettings) {
 		middleware.Recover(),
 		middleware.RequestID(),
 	)
-	h := handler.Handler{}
+	h := handler.AuthReg{}
 	e.POST("/reg", h.RegHandler)
-	e.POST("/login", h.LogHandler, contextmiddleware.WithTimeout(4))
+	e.POST("/login", h.LogInHandler, contextmiddleware.WithTimeout(4))
 
 	server := &http.Server{
 		Addr:         dataServer.Addr,

@@ -1,31 +1,49 @@
 package slogger
 
 import (
+	ctxhelp "DataLinks/pkg/context_helper"
+	"context"
 	"log/slog"
 	"os"
 )
 
 const (
 	LocalLog = iota
-	DevLog
 	ProdLog
 )
 
-func Setup(level int) *slog.Logger {
-	var logger *slog.Logger
-	switch level {
-	case 0:
-		logger = slog.New(slog.NewTextHandler(os.Stdout,
-			&slog.HandlerOptions{Level: slog.LevelInfo}))
-	case 1:
-		logger = slog.New(slog.NewJSONHandler(os.Stdout,
-			&slog.HandlerOptions{Level: slog.LevelDebug}))
-	case 2:
-		logger = slog.New(slog.NewJSONHandler(os.Stdout,
-			&slog.HandlerOptions{Level: slog.LevelInfo}))
-	default:
-		logger = slog.Default()
-	}
-	return logger
+type Setup struct {
+	*slog.Logger
+}
 
+func (l *Setup) Setup(level int) {
+	switch level {
+	case LocalLog:
+		l.Logger = slog.New(slog.NewTextHandler(os.Stdout,
+			&slog.HandlerOptions{Level: slog.LevelDebug}))
+	case ProdLog:
+		l.Logger = slog.New(slog.NewJSONHandler(os.Stdout,
+			&slog.HandlerOptions{Level: slog.LevelError}))
+	}
+}
+
+func (l *Setup) LoggerUserRequestID(ctx context.Context, keys ...any) *Setup {
+	var NewLogger *Setup
+	for _, key := range keys {
+		switch key {
+		case ctxhelp.ContextUserIdKey:
+			userID, ok := ctx.Value(ctxhelp.ContextUserIdKey).(int)
+			if !ok {
+				return l
+			}
+			NewLogger = &Setup{l.With(slog.Int("user_id", userID))}
+		case ctxhelp.ContextRequestIDKey:
+			requestID, ok := ctx.Value(ctxhelp.ContextRequestIDKey).(string)
+			if !ok {
+				return l
+			}
+			NewLogger = &Setup{l.With(slog.String("request_id", requestID))}
+		}
+	}
+	return NewLogger
 }

@@ -5,23 +5,23 @@ import (
 	"DataLinks/internal/dto/responce"
 	"DataLinks/internal/service"
 	"DataLinks/internal/service/jwt_hash"
-	auth "DataLinks/internal/storages/postgreSQL/storage_crud"
+	servise "DataLinks/internal/storages/postgreSQL/storage_crud"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"log/slog"
 )
 
-type Handler struct {
+type AuthReg struct {
 	Validator *validator.Validate
 	logger    *slog.Logger
-	Storage   auth.AuthReg
+	Storage   servise.AuthReg
 }
 
-func NewHandler(validator *validator.Validate, logger *slog.Logger, storage auth.AuthReg) *Handler {
-	return &Handler{Validator: validator, logger: logger, Storage: storage}
+func NewHandler(validator *validator.Validate, logger *slog.Logger, storage servise.AuthReg) *AuthReg {
+	return &AuthReg{Validator: validator, logger: logger, Storage: storage}
 }
 
-func (h *Handler) RegHandler(e echo.Context) error {
+func (h *AuthReg) RegHandler(e echo.Context) error {
 	JsonStruct := request.Register{}
 
 	err := e.Bind(&JsonStruct)
@@ -44,7 +44,7 @@ func (h *Handler) RegHandler(e echo.Context) error {
 	return responce.Success(e, responce.GoodCode, "New user created", "/login")
 }
 
-func (h *Handler) LogHandler(e echo.Context) error {
+func (h *AuthReg) LogInHandler(e echo.Context) error {
 	JsonStruct := request.LogIn{}
 
 	err := e.Bind(&JsonStruct)
@@ -70,4 +70,14 @@ func (h *Handler) LogHandler(e echo.Context) error {
 		return responce.Failed(e, responce.BadCode, "during process happened error")
 	}
 	return responce.Success(e, responce.BadCode, "you success log in", token)
+}
+
+type LinkHandler struct {
+	Validator *validator.Validate
+	logger    *slog.Logger
+	Storage   servise.HandlerStorage
+}
+
+func AddNewLinkHandler(e echo.Context) error {
+	da
 }
