@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
+	"github.com/labstack/gommon/log"
 	"log/slog"
 	"sync"
 	"time"
@@ -86,12 +87,15 @@ func (l *LogicUpdateLink) ChangeCurrentLink(ctx context.Context, Data request.Sw
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
+		log.Info(Data.Url)
+
 		oldId, err := l.Storage.FindLink(ctx, Data.Url)
 		if err != nil {
 			err = slogger.LoggerQueryRow(err, l.Logger, slogger.E1041)
 			errchan <- err
 		}
 		oldID = oldId
+
 		return
 	}()
 	go func() {
@@ -107,18 +111,19 @@ func (l *LogicUpdateLink) ChangeCurrentLink(ctx context.Context, Data request.Sw
 	}()
 	wg.Wait()
 	close(errchan)
-	
+
 	if err := ctx.Err(); err != nil {
+		log.Info(err.Error())
+
 		return slogger.DBError
 	}
-	select {
-	case err := <-errchan:
+
+	err, ok := <-errchan
+	if ok {
 		return err
-	default:
-		break
 	}
 
-	err := l.Storage.ChangeUserLink(ctx,
+	err = l.Storage.ChangeUserLink(ctx,
 		storage_crud.DataUpdateUserLink{IdUser: Data.UserId, IdOldLink: oldID, IdLink: newID})
 
 	if err != nil {
@@ -127,6 +132,7 @@ func (l *LogicUpdateLink) ChangeCurrentLink(ctx context.Context, Data request.Sw
 
 	l.Logger.Info("Update link successfully", slog.Int("old", oldID), slog.Int("new", newID))
 	return nil
+
 }
 
 type LogicDeleteLink struct {
