@@ -1,21 +1,25 @@
 package request
 
 type Register struct {
-	Name     string `json:"name" validator:"required,min=8,max=16"`
-	Email    string `json:"email" validator:"required,email"`
-	Password string `json:"password" validator:"required,min=8,max=24,password"`
+	Name     string `json:"name" validate:"required,min=8,max=16"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,password"`
 }
 type LogIn struct {
-	Email    string `json:"email" validator:"required,email"`
-	Password string `json:"password" validator:"required,min=8,max=24,password"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,password"`
 }
 
 type Add struct {
-	Url string `json:"url" validator:"required,url"`
+	Url string `json:"url" validate:"required,url,http"`
+	TakeChart
 }
-type Change struct {
+type TakeChart struct {
+	UserId int `json:"-"`
+}
+type Swap struct {
 	Add
-	NewUrl string `json:"new_url" validator:"required,url"`
+	NewUrl string `json:"newurl" validator:"required,url,http"`
 }
 type Delete struct {
 	Add

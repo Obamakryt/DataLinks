@@ -1,40 +1,28 @@
 package storage_crud
 
 import (
-	"DataLinks/internal/dto/request"
 	"DataLinks/internal/slogger"
 	"context"
-	"log/slog"
 )
 
-// TODO FK THIS SHIT REMAKE
-func (p *PostgresPool) Authorization(req request.LogIn, ctx context.Context) (StorageAuth, error) {
-	q := `SELECT password, id FROM users WHERE email=$1;`
-	scanqr := StorageAuth{}
-	err := p.client.Pool.QueryRow(ctx, q, req.Email).Scan(&scanqr)
+func (p *PostgresPool) Authorization(ctx context.Context, email string) (StorageAuth, error) {
+	const query = `SELECT password, id
+		 		   FROM users
+  		  		   WHERE email=$1`
+	data := StorageAuth{}
+	err := p.Pool.QueryRow(ctx, query, email).Scan(&data.Password, &data.Id)
 
 	if err != nil {
-		ReturnErr := slogger.LoggerQueryRow(err, p.logger, "Authorization")
-		return scanqr, ReturnErr
+		return data, err
 	}
-	p.logger.Info("Use is find", slog.String("email", req.Email))
-	return scanqr, nil
-}
-func NewStorageRegister(pass string, lastData request.Register) *StorageRegister {
-	return &StorageRegister{HashPass: pass, Name: lastData.Name, Email: lastData.Email}
+	return data, nil
 }
 
-// TODO FK THIS SHIT REMAKE HATE THIS REALIZATION
+func (p *PostgresPool) Registration(ctx context.Context, r *StorageRegister) error {
+	q := `INSERT INTO users(name, email, password)
+		  VALUES($1, $2, $3)`
 
-func (p *PostgresPool) Registration(r *StorageRegister, ctx context.Context) error {
-	q := `INSERT INTO users(name, email, password)  VALUES($1, $2, $3) ON CONFLICT (email) DO NOTHING`
+	commandTag, err := p.Pool.Exec(ctx, q, r.Name, r.Email, r.HashPass)
 
-	commandTag, err := p.client.Pool.Exec(ctx, q, r.Name, r.Email, r.HashPass)
-	if err != nil {
-		returnErr := slogger.LoggerExecInsert(err, p.logger, slogger.InsertNewUser)
-		return returnErr
-	}
-	p.logger.Info("User registered",
-		slog.String("name", r.Name), slog.String("email", r.Email))
-	return nil
+	return slogger.Exec(err, commandTag)
 }

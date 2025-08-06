@@ -1,8 +1,6 @@
 package slogger
 
 import (
-	ctxhelp "DataLinks/pkg/context_helper"
-	"context"
 	"log/slog"
 	"os"
 )
@@ -16,7 +14,7 @@ type Setup struct {
 	*slog.Logger
 }
 
-func (l *Setup) Setup(level int) {
+func (l *Setup) SetupLogger(level int) {
 	switch level {
 	case LocalLog:
 		l.Logger = slog.New(slog.NewTextHandler(os.Stdout,
@@ -27,23 +25,23 @@ func (l *Setup) Setup(level int) {
 	}
 }
 
-func (l *Setup) LoggerUserRequestID(ctx context.Context, keys ...any) *Setup {
-	var NewLogger *Setup
-	for _, key := range keys {
-		switch key {
-		case ctxhelp.ContextUserIdKey:
-			userID, ok := ctx.Value(ctxhelp.ContextUserIdKey).(int)
-			if !ok {
-				return l
-			}
-			NewLogger = &Setup{l.With(slog.Int("user_id", userID))}
-		case ctxhelp.ContextRequestIDKey:
-			requestID, ok := ctx.Value(ctxhelp.ContextRequestIDKey).(string)
-			if !ok {
-				return l
-			}
-			NewLogger = &Setup{l.With(slog.String("request_id", requestID))}
-		}
-	}
-	return NewLogger
-}
+//func (l *Setup) LoggerUserRequestID(ctx context.Context, keys ...any) error {
+//	var NewLogger *Setup
+//	for _, key := range keys {
+//		switch key {
+//		case ctxhelp.ContextUserIdKey:
+//			userID, ok := ctx.Value(ctxhelp.ContextUserIdKey).(int)
+//			if !ok {
+//				return
+//			}
+//			NewLogger = &Setup{l.With(slog.Int("user_id", userID))}
+//		case ctxhelp.ContextRequestIDKey:
+//			requestID, ok := ctx.Value(ctxhelp.ContextRequestIDKey).(string)
+//			if !ok {
+//				return l
+//			}
+//			NewLogger = &Setup{l.With(slog.String("request_id", requestID))}
+//		}
+//	}
+//	return NewLogger
+//}

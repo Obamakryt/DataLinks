@@ -1,12 +1,12 @@
 Postgres:
-- dbname: datalinks
-  username: postgres
-  hostname: localhost
-  port: 5432
+  dbname: "datalinks"
+  username: "postgres"
+  hostname: "localhost"
+  port: 5442
 
 
 Server:
   port: ":8080"
-  read_timeout: 5
-  write_timeout: 10
-  idle_timeout: 60
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 60s

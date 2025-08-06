@@ -6,8 +6,10 @@ import (
 )
 
 const (
-	GoodCode = http.StatusOK
-	BadCode  = http.StatusBadRequest
+	GoodCode    = http.StatusOK
+	BadCode     = http.StatusBadRequest
+	InvalidData = "invalid data"
+	ServerError = "server error"
 )
 
 type ResponseAuth struct {

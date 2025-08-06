@@ -11,15 +11,18 @@ type ServerSettings struct {
 	ReadTimeout  time.Duration `yaml:"read_timeout"`
 	WriteTimeout time.Duration `yaml:"write_timeout"`
 	IdleTimeout  time.Duration `yaml:"idle_timeout"`
-	yamlPath     string
+	YamlPath     string        `yaml:"-"`
+}
+type Server struct {
+	Settings ServerSettings `yaml:"Server"`
 }
 
-func NewServerSettings(yamlPath string) *ServerSettings {
-	return &ServerSettings{yamlPath: yamlPath}
+func NewServerSettings(yamlPath string) Server {
+	return Server{Settings: ServerSettings{YamlPath: yamlPath}}
 }
 
-func (s *ServerSettings) ParserServerSet() error {
-	err := cleanenv.ReadConfig(s.yamlPath, s)
+func (s *Server) ParserServerSet() error {
+	err := cleanenv.ReadConfig(s.Settings.YamlPath, s)
 	if err != nil {
 		return fmt.Errorf("couldnt read yml cfg %w", err)
 	}

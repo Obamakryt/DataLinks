@@ -8,11 +8,7 @@ import (
 	"log/slog"
 )
 
-const (
-	InsertNewUser = "InsertNewUser"
-)
-
-func LoggerExecInsert(err error, logger *slog.Logger, code CodeOperation) error {
+func LoggerExecInsert(err error, logger Setup, code CodeOperation) error {
 	if errors.Is(err, RowsAffectedError) {
 		return LoggerExecCommandTag(code, logger, err)
 	}
@@ -27,7 +23,7 @@ func LoggerExecInsert(err error, logger *slog.Logger, code CodeOperation) error 
 	return fmt.Errorf(SomeError)
 }
 
-func LoggerQueryRow(err error, logger *slog.Logger, code CodeOperation) error {
+func LoggerQueryRow(err error, logger Setup, code CodeOperation) error {
 	if err, ok := Context(err, logger, code); ok {
 		return err
 	}
@@ -38,7 +34,7 @@ func LoggerQueryRow(err error, logger *slog.Logger, code CodeOperation) error {
 	return fmt.Errorf(SomeError)
 }
 
-func LoggerQuery(err error, logger *slog.Logger, code CodeOperation) error {
+func LoggerQuery(err error, logger Setup, code CodeOperation) error {
 	if err, ok := Context(err, logger, code); ok {
 		return err
 	}

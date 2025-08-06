@@ -32,7 +32,7 @@ func (p *PostgresPool) InsertNewUserLinkTx(ctx context.Context, tx pgx.Tx, idUse
 }
 
 func (p *PostgresPool) Begin(ctx context.Context) (pgx.Tx, error) {
-	return p.client.Pool.BeginTx(ctx, pgx.TxOptions{})
+	return p.Pool.BeginTx(ctx, pgx.TxOptions{})
 }
 
 func (p *PostgresPool) TableUserLinks(ctx context.Context, idUser int) ([]string, error) {
@@ -42,7 +42,7 @@ func (p *PostgresPool) TableUserLinks(ctx context.Context, idUser int) ([]string
 				   JOIN urls ON user_links.urls_id = urls.id
 				   WHERE user_links.user_id = $1;`
 
-	rows, err := p.client.Pool.Query(ctx, query, idUser)
+	rows, err := p.Pool.Query(ctx, query, idUser)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (p *PostgresPool) InsertOrFindUrl(ctx context.Context, url string) (int, er
               unique_url = urls.unique_url 
               RETURNING id;`
 
-	err := p.client.Pool.QueryRow(ctx, query, url).Scan(&urlLink)
+	err := p.Pool.QueryRow(ctx, query, url).Scan(&urlLink)
 
 	return urlLink, err
 }
@@ -79,7 +79,8 @@ func (p *PostgresPool) FindLink(ctx context.Context, url string) (int, error) {
 	var oldLink int
 	const query = `SELECT id FROM urls WHERE unique_url = $1;`
 
-	err := p.client.Pool.QueryRow(ctx, query, url).Scan(&oldLink)
+	err := p.Pool.QueryRow(ctx, query, url).Scan(&oldLink)
+
 	if err != nil {
 		return -1, err
 	}
@@ -92,7 +93,7 @@ func (p *PostgresPool) ChangeUserLink(ctx context.Context, data DataUpdateUserLi
 				   WHERE user_id = $2 
 				   AND urls_id = $3;`
 
-	commandTag, err := p.client.Pool.Exec(ctx, query, data.IdLink, data.IdUser, data.IdOldLink)
+	commandTag, err := p.Pool.Exec(ctx, query, data.IdLink, data.IdUser, data.IdOldLink)
 
 	return slogger.Exec(err, commandTag)
 }
@@ -102,7 +103,7 @@ func (p *PostgresPool) DeleteUserLinkAssociation(ctx context.Context, urlID int,
        			   WHERE user_id = $1
        			   AND urls_id = $2;`
 
-	commandTag, err := p.client.Pool.Exec(ctx, query, userid, urlID)
+	commandTag, err := p.Pool.Exec(ctx, query, userid, urlID)
 
 	return slogger.Exec(err, commandTag)
 

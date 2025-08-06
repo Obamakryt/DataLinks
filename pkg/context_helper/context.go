@@ -14,11 +14,13 @@ import (
 func WithTimeout(timeout time.Duration) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
-			ctx, cancel := context.WithTimeout(e.Request().Context(), timeout)
+			ctx, cancel := context.WithTimeout(e.Request().Context(), time.Second*timeout)
 			defer cancel()
-			NewReq := e.Request().WithContext(ctx)
-			e.SetRequest(NewReq)
-			return next(e)
+			e.SetRequest(e.Request().WithContext(ctx))
+
+			err := next(e)
+
+			return err
 		}
 	}
 }
@@ -37,9 +39,13 @@ func MWRequestId(next echo.HandlerFunc) echo.HandlerFunc {
 func MWUserId(sigh jwt_hash.JWTSigh) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			path := c.Path()
+			if path == "/reg" || path == "/login" {
+				return next(c)
+			}
 			token := c.Request().Header.Get("Authorization")
 			if !strings.HasPrefix(token, "Bearer ") {
-				return c.Redirect(http.StatusUnauthorized, "http://localhost:8080/login")
+				return c.Redirect(http.StatusFound, "/login")
 			}
 			token = strings.TrimPrefix(token, "Bearer ")
 			subId, err := sigh.ParseJWT(token)
@@ -63,7 +69,7 @@ const (
 
 func ContextGetUserID(ctx context.Context) (int, bool) {
 	UserID := ctx.Value(ContextUserIdKey).(int)
-	if UserID != 0 {
+	if UserID > 0 {
 		return UserID, true
 	}
 	return -1, false

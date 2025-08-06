@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"DataLinks/internal/slogger"
 	"errors"
 	"github.com/go-playground/validator/v10"
 	"log/slog"
-	"net/http"
+	"net/url"
 	"strings"
-	"time"
 	"unicode"
 )
 
@@ -21,6 +21,7 @@ func ErrorValid(err error) map[string]string {
 			"min=8":    "short pass",
 			"max=24":   "long pass",
 			"password": "password doesnt comply standard",
+			"http":     "dont support http website",
 		}
 		for _, e := range v {
 			fail, ok := IncorrectPlaces[e.Tag()]
@@ -34,15 +35,18 @@ func ErrorValid(err error) map[string]string {
 	return PackString
 }
 
-func LoggerValidatorError(logger *slog.Logger, slogerr map[string]string) {
-	for k, v := range slogerr {
-		logger.Info("Validator Error", k, v)
+func LoggerValidatorError(logger slogger.Setup, logErrs map[string]string) {
+	for k, v := range logErrs {
+		logger.Info("Validator Error", slog.String(k, v))
 	}
 }
 
 func PasswordValidator(v *validator.Validate) {
 	_ = v.RegisterValidation("password", func(f validator.FieldLevel) bool {
 		value := f.Field().String()
+		if err := v.Var(value, "min=8,max=24"); err != nil {
+			return false
+		}
 		var hasUpper, hasDigit bool
 		for _, char := range value {
 			if unicode.IsUpper(char) {
@@ -59,26 +63,17 @@ func PasswordValidator(v *validator.Validate) {
 	})
 }
 
-// TODO: переделать эту залупу хэд запросы не работают
 func UrlValidator(v *validator.Validate) {
 	_ = v.RegisterValidation("url", func(f validator.FieldLevel) bool {
-		var url string
 		value := f.Field().String()
-		if len([]rune(value)) < 3 {
+		if len(value) == 0 {
 			return false
 		}
-		if !strings.HasPrefix(value, "https://") {
-			url = "https://" + value
-		}
-
-		client := http.Client{Timeout: 2 * time.Second}
-		resp, err := client.Head(url)
-		if err != nil || resp.StatusCode >= 400 {
+		parsed, err := url.ParseRequestURI(value)
+		if err != nil {
 			return false
 		}
-		defer resp.Body.Close()
-
-		return true
+		return parsed.Scheme != "" && parsed.Host != ""
 	})
 }
 

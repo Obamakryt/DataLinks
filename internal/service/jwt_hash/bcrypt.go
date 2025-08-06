@@ -8,6 +8,6 @@ func HashingPass(password string) string {
 
 }
 
-func CheckHashPass(password, hashpass string) bool {
+func VerifyPassword(password, hashpass string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashpass), []byte(password)) == nil
 }

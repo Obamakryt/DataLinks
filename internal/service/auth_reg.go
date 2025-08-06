@@ -3,53 +3,62 @@ package service
 import (
 	"DataLinks/internal/dto/request"
 	"DataLinks/internal/service/jwt_hash"
+	"DataLinks/internal/slogger"
 	auth "DataLinks/internal/storages/postgreSQL/storage_crud"
 	"context"
-	"fmt"
 	"log/slog"
 )
 
 type LogicReg struct {
-	DataWithoutHash request.Register
-	Logger          *slog.Logger
-}
-type AuthLogic struct {
-	Data   request.LogIn
-	Logger *slog.Logger
-	jwt_hash.JWTSigh
+	Logger  slogger.Setup
+	Storage auth.AuthReg
 }
 
-func (r *LogicReg) NewUser(ctx context.Context, storage auth.AuthReg) error {
-	hashpass := jwt_hash.HashingPass(r.DataWithoutHash.Password)
-	reg := auth.NewStorageRegister(hashpass, r.DataWithoutHash)
-	err := storage.Storage.Registration(reg, ctx)
+func (r *LogicReg) NewUser(ctx context.Context, DataWithoutHash request.Register) error {
+	hashpass := jwt_hash.HashingPass(DataWithoutHash.Password)
+	reg := auth.NewStorageRegister(hashpass, DataWithoutHash)
+	err := r.Storage.Registration(ctx, reg)
 	if err != nil {
-		r.Logger.Warn("Failed create new user", slog.String("Error", err.Error()))
-		return fmt.Errorf("failed create new user")
+		returnErr := slogger.LoggerExecInsert(err, r.Logger, slogger.E001)
+		return returnErr
 	}
+
+	r.Logger.Info("User registered",
+		slog.String("name", DataWithoutHash.Name),
+		slog.String("email", DataWithoutHash.Email))
 	return nil
 }
 
-func (a *AuthLogic) NewAuth(ctx context.Context, storage auth.AuthReg) (string, error) {
-	DataUser, err := storage.Storage.Authorization(a.Data, ctx)
+type LogicAuth struct {
+	Logger  slogger.Setup
+	Storage auth.AuthReg
+}
+
+func (a *LogicAuth) NewAuth(ctx context.Context, Data request.LogIn) (string, error) {
+	DataUser, err := a.Storage.Authorization(ctx, Data.Email)
 	if err != nil {
-		a.Logger.Warn("Failed find user", slog.String("Error", err.Error()))
-		return "", fmt.Errorf("failed find user")
+		return "", slogger.LoggerQueryRow(err, a.Logger, slogger.E002)
 	}
-	PassRight := jwt_hash.CheckHashPass(a.Data.Password, DataUser.Password)
+	PassRight := jwt_hash.VerifyPassword(Data.Password, DataUser.Password)
 	if !PassRight {
-		a.Logger.Warn("Failed incorrect password")
-		return "", fmt.Errorf("incorrect password")
+		a.Logger.Info("Failed Login incorrect password", slog.String("email", Data.Email))
+		return "", slogger.AuthError
 	}
-	if a.JWTSigh.Secret != "" {
-		token, err := a.JWTSigh.GenerateJWT(DataUser.Id, 15)
-		if err != nil {
-			a.Logger.Warn("something wrong on part of sigh token")
-			return "", fmt.Errorf("failed create token")
-		}
-		return token, nil
-	} else {
-		a.Logger.Info("where secret sigh?")
-		return "", fmt.Errorf("failed create token")
+	sight := jwt_hash.JWTSigh{}
+	err = sight.CreateSigh()
+	if err != nil {
+		return "", slogger.ServerError
 	}
+	if sight.Secret == "" {
+		a.Logger.Info("lost jwt sigh")
+		return "", slogger.ServerError
+	}
+	token, err := sight.GenerateJWT(DataUser.Id, jwt_hash.TimeLive)
+	if err != nil {
+		a.Logger.Info("something wrong on part of sigh token",
+			slog.String("error", err.Error()))
+		return "", slogger.ServerError
+	}
+	a.Logger.Info("User login", slog.String("email", Data.Email))
+	return token, nil
 }

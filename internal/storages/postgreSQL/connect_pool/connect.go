@@ -1,33 +1,31 @@
 package connect_pool
 
 import (
+	"DataLinks/internal/slogger"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/labstack/gommon/log"
 	"log/slog"
 	"time"
 )
 
-type PgxConnect struct {
-	Pool *pgxpool.Pool
-}
-
-func CreatePgxUrl(url PostgresUrl) string {
+func CreatePgxUrl(url PostgresCfg) string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-		url.Username,
-		url.Pass,
-		url.Hostname,
-		url.Port,
-		url.DBName)
+		url.Data.Username,
+		url.Data.Pass,
+		url.Data.Hostname,
+		url.Data.Port,
+		url.Data.DBName)
 }
 
-func NewPool(connurl string, try int, logger *slog.Logger) (*pgxpool.Pool, error) {
+func NewPool(connurl string, try int, logger slogger.Setup) (*pgxpool.Pool, error) {
 	var err error
 	for i := 0; i < try; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		logger.Info("Connect pgx try num - ", try)
+		logger.Info("Connect pgx", slog.Int("try num", i))
 		pool, e := pgxpool.New(ctx, connurl)
 		cancel()
 		if e != nil {
@@ -44,8 +42,12 @@ func NewPool(connurl string, try int, logger *slog.Logger) (*pgxpool.Pool, error
 				err = e
 				continue
 			}
-
+			if err != nil {
+				return nil, err
+			}
+			log.Info("Successfully connected to pgx", slog.Int("try num", i))
 			return pool, nil
+
 		}
 	}
 

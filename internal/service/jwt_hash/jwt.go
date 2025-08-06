@@ -14,17 +14,19 @@ type JWTSigh struct {
 	Secret string `env:"JWT_SIGH"`
 }
 
+const TimeLive = time.Minute * 15
+
 func (j *JWTSigh) CreateSigh() error {
-	err := cleanenv.ReadEnv(&j)
+	err := cleanenv.ReadEnv(j)
 	if err != nil {
 		return fmt.Errorf("couldnt find postgres password in env %w", err)
 	}
 	return nil
 }
 
-func (j *JWTSigh) GenerateJWT(id string, tl time.Duration) (string, error) {
+func (j *JWTSigh) GenerateJWT(id int, tl time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject:   id,
+		Subject:   strconv.Itoa(id),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tl)),
 	})
 
